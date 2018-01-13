@@ -33,35 +33,11 @@
 
 #if !TARGET_OS_SIMULATOR
         if (@available(iOS 11.2, *)) {
-            [self showbundlefiles];
-            [self showsupportfiles];
             [self copydoc];
         }
 #endif
     }
     return self;
-}
-
-/*
- *  helper to show files in the bundle
- */
--(void)showbundlefiles {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString       *bundleRoot = [[NSBundle mainBundle] bundlePath];
-    NSArray       *dirContents = [fileManager contentsOfDirectoryAtPath:bundleRoot error:nil];
-
-    NSLog(@"%@\n%@", bundleRoot, dirContents);
-}
-
-/*
- *  helper to show files in the Application Support folder
- */
--(void)showsupportfiles {
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString      *supportRoot = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
-    NSArray       *dirContents = [fileManager contentsOfDirectoryAtPath:supportRoot error:nil];
-
-    NSLog(@"%@\n%@", supportRoot, dirContents);
 }
 
 /*
@@ -76,7 +52,7 @@
 
     NSString *folderPath = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
     if (![fm fileExistsAtPath:folderPath]) {
-        [fm createDirectoryAtPath:folderPath withIntermediateDirectories:YES attributes:kNilOptions error:nil];
+        [fm createDirectoryAtPath:folderPath withIntermediateDirectories:YES attributes:nil error:nil];
     }
 
     /*
@@ -94,7 +70,6 @@
 
     _previewItemURL = [NSURL fileURLWithPath:filePath];
 }
-
 @end
 
 /*
@@ -124,12 +99,6 @@
 @end
 
 @implementation ViewController
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-}
-
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
 
@@ -158,10 +127,4 @@
 
     [self presentViewController:qlController animated:YES completion:nil];
 }
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
 @end
