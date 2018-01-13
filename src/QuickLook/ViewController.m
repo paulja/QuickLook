@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import <TargetConditionals.h>
 
 @import QuickLook;
 
@@ -23,9 +24,77 @@
     if (self) {
         _previewItemURL = [docURL copy];
         _previewItemTitle = [title copy];
+
+        /*
+         Unfortunately there's a bug in iOS 11.2 that prevents bundled PDF's from displaying when using
+         the QLPreviewController. This appears to only be a problem when attempting to load the PDF on a
+         physical device; everything works as expected when running in the simulator.
+         */
+
+#if !TARGET_OS_SIMULATOR
+        if (@available(iOS 11.2, *)) {
+            [self showbundlefiles];
+            [self showsupportfiles];
+            [self copydoc];
+        }
+#endif
     }
     return self;
 }
+
+/*
+ *  helper to show files in the bundle
+ */
+-(void)showbundlefiles {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString       *bundleRoot = [[NSBundle mainBundle] bundlePath];
+    NSArray       *dirContents = [fileManager contentsOfDirectoryAtPath:bundleRoot error:nil];
+
+    NSLog(@"%@\n%@", bundleRoot, dirContents);
+}
+
+/*
+ *  helper to show files in the Application Support folder
+ */
+-(void)showsupportfiles {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSString      *supportRoot = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
+    NSArray       *dirContents = [fileManager contentsOfDirectoryAtPath:supportRoot error:nil];
+
+    NSLog(@"%@\n%@", supportRoot, dirContents);
+}
+
+/*
+ *  helper to copy resource to a location that the QLPreviewController can see.
+ */
+-(void)copydoc {
+    NSFileManager *fm = [NSFileManager defaultManager];
+
+    /*
+     *  folder bookkeeping
+     */
+
+    NSString *folderPath = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES) firstObject];
+    if (![fm fileExistsAtPath:folderPath]) {
+        [fm createDirectoryAtPath:folderPath withIntermediateDirectories:YES attributes:kNilOptions error:nil];
+    }
+
+    /*
+     *  migrate the target file to a location visible to the QLPreviewController
+     */
+
+    NSString *filePath = [folderPath stringByAppendingPathComponent:[_previewItemURL.absoluteString lastPathComponent]];
+    if (![fm fileExistsAtPath:filePath]) {
+        [fm copyItemAtPath:_previewItemURL.relativePath toPath:filePath error:nil];
+    }
+
+    /*
+     *  persist the cached location
+     */
+
+    _previewItemURL = [NSURL fileURLWithPath:filePath];
+}
+
 @end
 
 /*
@@ -94,6 +163,5 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
 
 @end
